@@ -1,5 +1,4 @@
-Process flow:
-##1. AzureAD
+## 1. AzureAD
 * Apply 365Inspect Controls
 * :white_check_mark: Create Pilot User (AzureAD)
 * :white_check_mark: Create Pilot Group (AzureAD)
@@ -16,7 +15,7 @@ Process flow:
   * Get ID from Policy
   * Apply Policy to Pilot Group ID
 
-##2. Endpoint Manager
+## 2. Endpoint Manager
 * Apply Compliance Baselines
 * Apply Configuration Policies
 * Apply MDM
