@@ -15,23 +15,28 @@
   None. 365Inspect.ps1 does not generate any output.
   .EXAMPLE
   PS> .\insertpowershellnamehere.ps1
+	.NOTES
+	 Version:        0.1
+	 Author:         RJ Sudlow
+	 Creation Date:  24/02/2022
 #>
 
 param (
 	[Parameter(Mandatory = $true,
-		HelpMessage = 'Domain name')]
+		HelpMessage = '`nDomain name')]
 	[string] $Domain,
 	[Parameter(Mandatory = $true,
-		HelpMessage = 'Pilot Full Name (with spaces)')]
+		HelpMessage = '`nPilot Full Name (with spaces)')]
 	[string] $PilotDisplayName,
 	[Parameter(Mandatory = $true,
-		HelpMessage = 'Pilot Username')]
+		HelpMessage = '`nPilot Username (No Spaces)')]
 	[string] $PilotUserName,
 	[Parameter(Mandatory = $true,
-		HelpMessage = 'Pilot group name')]
-	[string] $PilotGroup
-	#[string[]] $SelectedInspectors = @(),
-	#[string[]] $ExcludedInspectors = @()
+		HelpMessage = '`nPilot group name')]
+	[string] $PilotGroup,
+	[Parameter(Mandatory = $true,
+		HelpMessage = '`nPilot group mail nickname (No Spaces)')]
+	[string] $PilotGroupNickname
 )
 
 Function Green
@@ -56,17 +61,17 @@ Function Connect-MSGraph{
 	Write-Output "[+] Successfully connected with Microsoft Graph. `n" | Green
 }
 
-Function Create-PilotUser{
-# Create Intune Test User
-# Reference: https://docs.microsoft.com/en-us/graph/api/user-post-users?view=graph-rest-1.0&tabs=powershell
-# Reference: https://docs.microsoft.com/en-us/powershell/module/microsoft.graph.users/get-mguser?view=graph-powershell-beta
+Function Create-User{
+	# Create Intune Test User
+	# Reference: https://docs.microsoft.com/en-us/graph/api/user-post-users?view=graph-rest-1.0&tabs=powershell
+	# Reference: https://docs.microsoft.com/en-us/powershell/module/microsoft.graph.users/get-mguser?view=graph-powershell-beta
+	#Import-Module Microsoft.Graph.Users
 	Write-Output "[*] Creating Pilot User with name of $PilotUserName@$Domain. `n" | Blue
-	Import-Module Microsoft.Graph.Users
 	$params = @{
 		AccountEnabled = $true
 		DisplayName = $PilotDisplayName
 		MailNickname = $PilotUserName
-		UserPrincipalName = "TestUser@$Domain"
+		UserPrincipalName = "$PilotUserName@$Domain"
 		PasswordProfile = @{
 			ForceChangePasswordNextSignIn = $true
 			Password = "TempPass123**"
@@ -74,36 +79,44 @@ Function Create-PilotUser{
 	}
 	New-MgUser -BodyParameter $params
 	Write-Output "[*] Assigning $PilotUserName UID to variable... `n" | Blue
-	$PilotUID = Get-MgUser -Filter "displayName eq 'RJ Sudlow'" -Property Id | Format-List ID | cut -d " " -f3
-	$PilotUID = '$PilotUID'
-	Write-Output "[+] Test User UID is: $PilotUID `n" | Blue
+	# Appropriate way to get UID as variable:
+	# $test = (Get-MgUser -Filter "displayName eq 'RJ Sudlow'" -Property Id).Id
+	$PilotUID = (Get-MgUser -Filter "displayName eq '$PilotDisplayName'").Id
+	$global:PilotUID = $PilotUID
+	Write-Output "[+] UID for new user is: $PilotUID `n" | Green
 }
 
-
-Function Create-PilotGroup{
-# Create Intune Pilot Group & Assign User to Group
-# Reference: https://docs.microsoft.com/en-us/graph/api/group-post-groups?view=graph-rest-1.0&tabs=powershell
-	Write-Output "[*] Creating Pilot Group with name of $PilotGroup." | Blue
-	Import-Module Microsoft.Graph.Groups
-	# Error thrown when trying to apply the MemberURL to the Group via UID
-	$MemberURL = 'https://graph.microsoft.com/v1.0/users/'
-	$MemberAdded = -join($MemberURL,$PilotUID)
-	$MemberAdded
-	<#
+Function Create-Group{
+	#Import-Module Microsoft.Graph.Groups
+	# Create Intune Pilot Group & Assign User to Group
+	# Reference: https://docs.microsoft.com/en-us/graph/api/group-post-groups?view=graph-rest-1.0&tabs=powershell
+	Write-Output "[*] Creating group..." | Blue
+	#$MemberURL = "https://graph.microsoft.com/v1.0/users/$PilotUID"
 	$params = @{
 		Description = "Group for all users with Intune licenses."
-		DisplayName = "Intune Users"
+		DisplayName = "$PilotGroup"
 		GroupTypes = @(
 		)
 		MailEnabled = $false
+		MailNickname = "$PilotGroupNickname"
 		SecurityEnabled = $true
+		"Owners@odata.bind" = @(
+	    "https://graph.microsoft.com/v1.0/users/$PilotUID"
+		)
 		"Members@odata.bind" = @(
-			"https://graph.microsoft.com/v1.0/users/"+$PilotUID)
+			"https://graph.microsoft.com/v1.0/users/$PilotUID")
 	}
 	New-MgGroup -BodyParameter $params
+	# Need to find how to get Group ID
+	$GroupID = (Get-MgGroup -Filter "displayName eq '$PilotGroupNickname'").Id
+	$global:GroupID = $GroupID
+	Write-Output "[+] UID for group is: $GroupID `n" | Green
 }
-#>
+
+Function Import-ComplianceJSON{
+
 }
+
 Connect-MSGraph
-Create-PilotUser
-Create-PilotGroup
+Create-User
+Create-Group
