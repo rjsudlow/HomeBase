@@ -36,22 +36,17 @@ for nefarious deeds. Please pay special attention to all local, state, and feder
 
 ## Roadmap
 ### AzureAD
-Apply 365Inspect Controls
-:white_check_mark: Create Pilot User (AzureAD)
-
-:white_check_mark: Create Pilot Group (AzureAD)
-
-:white_check_mark: Apply Conditional Access (AzureAD)
-
-Apply Compliance Policies
-
-Apply Configuration Policies
-
+* Apply 365Inspect Controls
+* :white_check_mark: Create Pilot User (AzureAD)
+* :white_check_mark: Create Pilot Group (AzureAD)
+* :white_check_mark: Apply Conditional Access (AzureAD)
+* Apply Compliance Policies
+* Apply Configuration Policies
 
 ### Endpoint Manager
-Apply Compliance Baselines
-Apply Configuration Policies
-Apply MDM
+* Apply Compliance Baselines
+* Apply Configuration Policies
+* Apply MDM
   * Corporate (Android)
   * Corporate (iOS)
   * BOYD (Android)
