@@ -13,28 +13,29 @@ The script can be used to deploy baseline changes in Greenfield or Brownfield de
 
 Special thanks to Soteria for the great 365-Inspect tool to help identify best practice improvements in all things 365.
 
-## Download
+## :arrow_down: Download
 ```
 git clone https://github.com/rjsudlow/homebase
 ```
 
-## Setup
+## :computer: Setup
 Setup will check for dependencies at runtime. If any are missing, they will be installed.
 
-## Usage
+## :runner: Usage
 ```
 To add
 ```
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Disclaimer
+## :bangbang: Disclaimer
 >This should go without saying, but this tool is for academic purposes only. I'm not responsible if you want to use this
 for nefarious deeds. Please pay special attention to all local, state, and federal laws. Remember:
 "With great power comes great responsibility."
 
 
-## Roadmap
+## :compass: Roadmap
+
 ### AzureAD
 * Apply 365Inspect Controls
 * :white_check_mark: Create Pilot User (AzureAD)
