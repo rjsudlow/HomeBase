@@ -30,7 +30,7 @@ Import-Module Microsoft.Graph.Identity.SignIns
 
 # Require MFA for all Adminsitrators
 $params = @{
-	DisplayName = "TEST: Require MFA for All Administrators"
+	DisplayName = "Require MFA for All Administrators"
 	State = "enabled"
 	Conditions = @{
 		ClientAppTypes = @(
@@ -79,7 +79,7 @@ New-MgIdentityConditionalAccessPolicy -BodyParameter $params
 
 # Require MFA for users outside of Trusted Locations
 $params = @{
-	DisplayName = "TEST: Require MFA for users outside of Trusted Locations"
+	DisplayName = "Require MFA for users outside of Trusted Locations"
 	State = "enabled"
 	Conditions = @{
 		ClientAppTypes = @(
@@ -118,7 +118,7 @@ New-MgIdentityConditionalAccessPolicy -BodyParameter $params
 
 # Require App Protection policy for mobile devices
 $params = @{
-	DisplayName = "TEST: Require App Protection policy for mobile devices"
+	DisplayName = "Require App Protection policy for mobile devices"
 	State = "enabled"
 	Conditions = @{
 		ClientAppTypes = @(
@@ -163,7 +163,7 @@ New-MgIdentityConditionalAccessPolicy -BodyParameter $params
 
 # Disable legacy authentication
 $params = @{
-	DisplayName = "TEST: Disable legacy authentication"
+	DisplayName = "Disable legacy authentication"
 	State = "enabled"
 	Conditions = @{
 		ClientAppTypes = @(
@@ -205,8 +205,8 @@ New-MgIdentityConditionalAccessPolicy -BodyParameter $params
 
 # Disable AAD for non-administrators
 $params = @{
-	DisplayName = "TEST: Restrict access to AAD for non-administrators"
-	State = "enabledForReportingButNotEnforced"
+	DisplayName = "Restrict access to AAD for non-administrators"
+	State = "enabled"
 	Conditions = @{
 		ClientAppTypes = @(
 			"All"
