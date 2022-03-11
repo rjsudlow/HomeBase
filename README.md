@@ -1,6 +1,6 @@
 # Home Base
-![Screenshot](.\misc\built-with-powershell.png)]
-[![feature-not-a-bug](./misc/it's-a-feature-not-a-bug.png)]
+![Screenshot](./misc/built-with-powershell.png)
+![feature-not-a-bug](./misc/it's-a-feature-not-a-bug.png)
 
 Powershell script used to deploy baseline configurations & best practice hardening for O365, Azure AD, and Azure Tenants. This includes:
 * Conditional Access Policies
