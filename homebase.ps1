@@ -117,6 +117,10 @@ Function Import-ComplianceJSON{
 
 }
 
+Function DeployConditionalAccess{
+
+}
+
 Connect-MSGraph
 Create-User
 Create-Group
