@@ -1,8 +1,10 @@
+# Reference: https://docs.microsoft.com/en-us/azure/active-directory/roles/permissions-reference
+
 Connect-MgGraph -Scopes "Application.Read.All,Group.Read.All,Directory.Read.All,Policy.Read.All,Policy.Read.ConditionalAccess,Policy.ReadWrite.ConditionalAccess,RoleManagement.Read.All,RoleManagement.Read.Directory,User.Read.All"
 Import-Module Microsoft.Graph.Identity.SignIns
 
 $params = @{
-	DisplayName = "Block access to EXO non-trusted regions."
+	DisplayName = "Require MFA for All Administrators"
 	State = "enabled"
 	Conditions = @{
 		ClientAppTypes = @(
