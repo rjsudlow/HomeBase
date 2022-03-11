@@ -1,0 +1,109 @@
+365-Inspect Findings:
+---------------------
+1. Azure PowerShell Service Principal Assignment Missing
+* Restrict Access to Admin Portal:
+  * AAD > Settings > “Restrict access to Azure AD administration portal” > Yes
+* Restrict Access to invite Guests:
+  * AAD > External Identities > External collaboration settings > “Members can invite” >  No; “Guests can invite” > No
+* Restrict Access to Create Groups:
+  * AAD> Azure Active Directory > User Settings > “Users can register applications” > No
+  * "Set-MsolCompanySettings -UsersPermissionToCreateGroupsEnabled $false"
+  * Restrict Access to App Registrations, Application Consent, and Adding Gallery Apps
+  * "Set-MsolCompanySettings -UsersPermissionToUserConsentToAppEnabled $false
+* Block Legacy Auth for Email:
+  * "Get-CASMailboxPlan | Set-CASMailboxPlan -PopEnabled $false -ImapEnabled $false -SmtpClientAuthenticationDisabled $true -ActiveSyncEnabled $false"
+* Review and set excessive user permissions
+  * "Set-MsolCompanySettings -UsersPermissionToReadOtherUsersEnabled $false"
+  * "Set-AzureADMSAuthorizationPolicy -id (Get-AzureADMSAuthorizationPolicy).id –AllowEmailVerifiedUsersToJoinOrganization $false"
+  * "Set-AzureADMSAuthorizationPolicy -id (Get-AzureADMSAuthorizationPolicy).id -AllowedToSignupEmailBasedSubscriptions $false"
+
+2. Azure PowerShell Service Principal Configuration Missing
+* Applied above
+
+3. Common Malicious Attachment Extensions are Not Filtered
+* See EOP/overview.md
+
+4. Conditional Access Policies
+* see CA/overview.md
+
+5. Exchange Mailboxes with IMAP Enabled
+* "Set-CASMailbox -Identity [MailboxName] -IMAPEnabled $false" > [MailboxName] needs replacing
+
+6. Exchange Mailboxes with POP Enabled
+* "Set-CASMailbox -Identity [MailboxName] -PopEnabled $false" > [MailboxName] needs replacing
+
+7. Malware Filter Policies Don't Alert for Internal Users Sending Malware
+* "Set-MalwareFilterPolicy -Identity 'Malware Filter Policy Name' -Action DeleteMessage -EnableInternalSenderAdminNotifications $true -InternalSenderAdminAddress admin@yourdomain.com"
+* see EOP/overview.md
+
+8. No Transport Rules to Block Executable Attachments
+* see EOP/overview.md
+
+9. No Transport Rules to Block Large Attachments
+* see EOP/overview.md
+
+10. Safe Links Click-Through is Allowed
+* "Set-SafeLinksPolicy -DoNotAllowClickThrough $true"
+
+11. Safe Links for Teams is Not Enabled
+* "Set-SafeLinksPolicy -IsEnabled $true -EnableSafeLinksForTeams $true"
+
+12. SharePoint External Sharing Enabled (Global)
+* Settings > Services > Sharing page > SharePoint Administration Center> "Share with Anyone" > more Restrictive
+
+13. SMTP Authentication not Globally Disabled
+* "Set-TransportConfig -SmtpClientAuthenticationDisabled $true"
+
+14. Unified Audit Log Search is Not Enabled
+* Compliance Center > Search > Audit Log Search > Turn On Auditing > On
+
+15. Users with No MFA Configured
+* CA/overview.md
+
+16. DKIM Not Enabled for Exchange Online Domains
+* Requires additional steps
+
+17. Microsoft Teams Consumer Communication Policies
+* Requires additional steps
+
+18. Microsoft Teams External Domain Communication Policies
+* Requires additional steps
+
+19. No Custom Anti-Malware Policy Present
+* see EOP/overview.md
+
+20. No Transport Rules to Block Domain Spoofing
+* see EOP/overview.md
+
+21. Outgoing Sharing Invitations are Not Monitored
+* "Set-SPOTenant -BccExternalSharingInvitations $true -BccExternalSharingInvitationsList "administrator@yourdomain""
+
+22. Suspicious Outgoing Spam Messages Not Monitored
+* "Set-HostedOutboundSpamFilterPolicy -BccSuspiciousOutboundMail $true -BccSuspiciousOutboundAdditionalRecipients "administrator@yourdomain""
+
+23. Calendar Sharing with External Users Enabled
+* O365 Admin Center > Exchange > Organization > Sharing > Calendar Sharing > Off
+
+24. Microsoft Teams External P2P File Transfer Allowed
+* "Set-CsExternalUserCommunicationPolicy -EnableP2PFileTransfer $False"
+
+25. Self-Serve Password Reset is Not Enabled
+* O365 Admin Center > Settings > Org Settings > Security & Privacy > SSPR > On
+
+26. Microsoft Teams Policies Allow Anonymous Members
+* "Set-CsTeamsMeetingPolicy -Identity 'Policy Name' -AllowAnonymousUsersToJoinMeeting $false"
+
+27. Microsoft Teams Users Allowed to Invite Anonymous Users
+* Set-CsTeamsMeetingPolicy -Identity 'Policy Name' -AllowAnonymousUsersToJoinMeeting $false
+
+28. Microsoft Secure Defaults
+* AAD > Properties > Managed Security defaults > Enable Security Defaults > Yes
+
+29. Microsoft Teams External Access Policies
+* Requires additional steps
+
+30. Password Expiration Period is Set
+* O365 Admin Center > Settings > Org Settings > Security and Privacy > Password Expiration Policy > No
+
+31. Tenant Transport Rules
+* Requires additional steps
