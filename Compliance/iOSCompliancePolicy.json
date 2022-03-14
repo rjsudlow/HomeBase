@@ -1,0 +1,23 @@
+{
+  "@odata.type": "microsoft.graph.iosCompliancePolicy",
+  "description": "iOS Compliance Policy",
+  "displayName": "TEST: iOS Compliance Policy",
+  "scheduledActionsForRule":[{"ruleName":"PasswordRequired","scheduledActionConfigurations":[{"actionType":"block","gracePeriodHours":0,"notificationTemplateId":""}]}],
+  "passcodeRequired": true,
+  "passcodeBlockSimple": true,
+  "passcodeExpirationDays": 65535,
+  "passcodeMinimumLength": 6,
+  "passcodeMinutesOfInactivityBeforeLock": 15,
+  "passcodeMinutesOfInactivityBeforeScreenTimeout":  2,
+  "passcodePreviousPasscodeBlockCount": 4,
+  "passcodeMinimumCharacterSetCount": null,
+  "passcodeRequiredType": "numeric",
+  "securityBlockJailbrokenDevices": true,
+  "securityRequireSafetyNetAttestationBasicIntegrity":  true,
+  "securityRequireSafetyNetAttestationCertifiedDevice":  true,
+  "securityRequireGooglePlayServices":  true,
+  "securityRequireUpToDateSecurityProviders":  false,
+  "securityRequireCompanyPortalAppIntegrity":  true,
+  "deviceThreatProtectionEnabled": true,
+  "deviceThreatProtectionRequiredSecurityLevel": "low"
+}

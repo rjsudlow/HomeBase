@@ -1,0 +1,21 @@
+{
+  "@odata.type":  "microsoft.graph.androidCompliancePolicy",
+  "displayName":  "TEST: Android Compliance Policy",
+  "description":  "Android Compliance Policy",
+  "scheduledActionsForRule":[{"ruleName":"PasswordRequired","scheduledActionConfigurations":[{"actionType":"block","gracePeriodHours":0,"notificationTemplateId":""}]}],
+  "passwordRequiredType":  "deviceDefault",
+  "passwordMinimumLength":  6,
+  "passwordExpirationDays": null,
+  "passwordMinutesOfInactivityBeforeLock":  15,
+  "passwordPreviousPasswordBlockCount":  4,
+  "passwordRequiredType":  "numeric",
+  "passwordRequired":  true,
+  "storageRequireEncryption":  true,
+  "storageRequireRemovableStorageEncryption":  true,
+  "deviceThreatProtectionEnabled":  true,
+  "deviceThreatProtectionRequiredSecurityLevel":  "low",
+  "requireAppVerify":  true,
+  "securityBlockJailbrokenDevices":  true,
+  "securityPreventInstallAppsFromUnknownSources":  true,
+  "securityDisableUsbDebugging":  false
+}
