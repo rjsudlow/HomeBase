@@ -42,6 +42,12 @@ To add
   * :white_check_mark: Android
   * :white_check_mark: iOS
 * Apply Configuration Policies
+* Apply MAM Policies
+  * :white_check_mark: iOS
+  * :white_check_mark: Android
+* Apply Application Protection Policies
+  * iOS
+  * Android
 * Apply MDM
   * Corporate (Android)
   * Corporate (iOS)
