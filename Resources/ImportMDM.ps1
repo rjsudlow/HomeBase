@@ -360,7 +360,7 @@ $Resource = "deviceManagement/deviceCompliancePolicies"
     }
 }
 
-# Upload ManagedAppPolicies from folder
+# Upload Compliance Policies from folder
 $CompliancePolicyPath = "..\CompliancePolicies"
 Get-ChildItem $CompliancePolicyPath | Foreach-Object {
   Write-host "File name found: $_ " -ForegroundColor Yellow
@@ -373,7 +373,7 @@ Get-ChildItem $CompliancePolicyPath | Foreach-Object {
   $JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
   # May need to change to $_ instead of $DisplayName
   Write-Host "Adding Compliance Policy $DisplayName" -ForegroundColor Yellow
-  Add-ManagedAppPolicy -JSON $JSON_Output
+  Add-DeviceCompliancePolicy -JSON $JSON_Output
   Write-host "'$DisplayName' uploaded." -ForegroundColor Cyan
 }
 
