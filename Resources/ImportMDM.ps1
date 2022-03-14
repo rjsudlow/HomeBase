@@ -145,104 +145,6 @@ $authority = "https://login.microsoftonline.com/$Tenant"
     }
 
 }
-
-####################################################
-
-Function Add-MDMApplication(){
-
-<#
-.SYNOPSIS
-This function is used to add an MDM application using the Graph API REST interface
-.DESCRIPTION
-The function connects to the Graph API Interface and adds an MDM application from the itunes store
-.EXAMPLE
-Add-MDMApplication -JSON $JSON
-Adds an application into Intune
-.NOTES
-NAME: Add-MDMApplication
-#>
-
-[cmdletbinding()]
-
-param
-(
-    $JSON
-)
-
-$graphApiVersion = "Beta"
-$App_resource = "deviceAppManagement/mobileApps"
-
-    try {
-        if(!$JSON){
-        write-host "No JSON was passed to the function, provide a JSON variable" -f Red
-        break
-        }
-
-        Test-JSON -JSON $JSON
-
-        $uri = "https://graph.microsoft.com/$graphApiVersion/$($App_resource)"
-        Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/json" -Body $JSON -Headers $authToken
-
-    }
-
-    catch {
-    $ex = $_.Exception
-    $errorResponse = $ex.Response.GetResponseStream()
-    $reader = New-Object System.IO.StreamReader($errorResponse)
-    $reader.BaseStream.Position = 0
-    $reader.DiscardBufferedData()
-    $responseBody = $reader.ReadToEnd();
-    Write-Host "Response content:`n$responseBody" -f Red
-    Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
-    write-host
-    break
-    }
-}
-
-####################################################
-Function Add-ManagedAppPolicy() {
-<#
-.SYNOPSIS
-This function is used to add an Managed App policy using the Graph API REST interface
-.DESCRIPTION
-The function connects to the Graph API Interface and adds a Managed App policy
-.EXAMPLE
-Add-ManagedAppPolicy -JSON $JSON
-Adds a Managed App policy in Intune
-.NOTES
-NAME: Add-ManagedAppPolicy
-#>
-
-[cmdletbinding()]
-param($JSON)
-$graphApiVersion = "Beta"
-$Resource = "deviceAppManagement/managedAppPolicies"
-    try {
-        if($JSON -eq "" -or $JSON -eq $null){
-          write-host "No JSON specified, please specify valid JSON for a Managed App Policy..." -f Red
-        }
-
-        else {
-          Test-JSON -JSON $JSON
-          $uri = "https://graph.microsoft.com/$graphApiVersion/$($Resource)"
-          Invoke-RestMethod -Uri $uri -Headers $authToken -Method Post -Body $JSON -ContentType "application/json"
-        }
-    }
-
-    catch {
-      Write-Host
-      $ex = $_.Exception
-      $errorResponse = $ex.Response.GetResponseStream()
-      $reader = New-Object System.IO.StreamReader($errorResponse)
-      $reader.BaseStream.Position = 0
-      $reader.DiscardBufferedData()
-      $responseBody = $reader.ReadToEnd();
-      Write-Host "Response content:`n$responseBody" -f Red
-      Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
-      write-host
-      break
-    }
-}
 ####################################################
 Function Test-JSON(){
 
@@ -311,8 +213,104 @@ else {
 
 # Getting the authorization token
 $global:authToken = Get-AuthToken -User $User
-
 }
+####################################################
+Function Add-MDMApplication(){
+
+<#
+.SYNOPSIS
+This function is used to add an MDM application using the Graph API REST interface
+.DESCRIPTION
+The function connects to the Graph API Interface and adds an MDM application from the itunes store
+.EXAMPLE
+Add-MDMApplication -JSON $JSON
+Adds an application into Intune
+.NOTES
+NAME: Add-MDMApplication
+#>
+
+[cmdletbinding()]
+
+param
+(
+    $JSON
+)
+
+$graphApiVersion = "Beta"
+$App_resource = "deviceAppManagement/mobileApps"
+
+    try {
+        if(!$JSON){
+        write-host "No JSON was passed to the function, provide a JSON variable" -f Red
+        break
+        }
+
+        Test-JSON -JSON $JSON
+
+        $uri = "https://graph.microsoft.com/$graphApiVersion/$($App_resource)"
+        Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/json" -Body $JSON -Headers $authToken
+
+    }
+
+    catch {
+    $ex = $_.Exception
+    $errorResponse = $ex.Response.GetResponseStream()
+    $reader = New-Object System.IO.StreamReader($errorResponse)
+    $reader.BaseStream.Position = 0
+    $reader.DiscardBufferedData()
+    $responseBody = $reader.ReadToEnd();
+    Write-Host "Response content:`n$responseBody" -f Red
+    Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
+    write-host
+    break
+    }
+}
+####################################################
+Function Add-ManagedAppPolicy() {
+<#
+.SYNOPSIS
+This function is used to add an Managed App policy using the Graph API REST interface
+.DESCRIPTION
+The function connects to the Graph API Interface and adds a Managed App policy
+.EXAMPLE
+Add-ManagedAppPolicy -JSON $JSON
+Adds a Managed App policy in Intune
+.NOTES
+NAME: Add-ManagedAppPolicy
+#>
+
+[cmdletbinding()]
+param($JSON)
+$graphApiVersion = "Beta"
+$Resource = "deviceAppManagement/managedAppPolicies"
+    try {
+        if($JSON -eq "" -or $JSON -eq $null){
+          write-host "No JSON specified, please specify valid JSON for a Managed App Policy..." -f Red
+        }
+
+        else {
+          Test-JSON -JSON $JSON
+          $uri = "https://graph.microsoft.com/$graphApiVersion/$($Resource)"
+          Invoke-RestMethod -Uri $uri -Headers $authToken -Method Post -Body $JSON -ContentType "application/json"
+        }
+    }
+
+    catch {
+      Write-Host
+      $ex = $_.Exception
+      $errorResponse = $ex.Response.GetResponseStream()
+      $reader = New-Object System.IO.StreamReader($errorResponse)
+      $reader.BaseStream.Position = 0
+      $reader.DiscardBufferedData()
+      $responseBody = $reader.ReadToEnd();
+      Write-Host "Response content:`n$responseBody" -f Red
+      Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
+      write-host
+      break
+    }
+}
+####################################################
+
 ####################################################
 Function Add-DeviceCompliancePolicy(){
 <#
@@ -403,8 +401,8 @@ Get-ChildItem $AppProtectionPath | Foreach-Object {
   $JSON_Convert | Add-Member -MemberType NoteProperty -Name 'apps' -Value @($JSON_Apps) -Force
   $DisplayName = $JSON_Convert.displayName
   $JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
-
-  write-host "Application Protection Policy $DisplayName found." -ForegroundColor Yellow
+  # May need to change to $_ instead of $DisplayName
+  write-host "Application Protection Policy $DisplayName" -ForegroundColor Yellow
   Add-ManagedAppPolicy -JSON $JSON_Output
   Write-Host "'$DisplayName' uploaded." -ForegroundColor Cyan
 }
