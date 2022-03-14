@@ -53,7 +53,7 @@ Apply Policy to Pilot Group ID
 
 
 
-## :bangbang: Disclaimer
+## Disclaimer
 >This should go without saying, but this tool is for academic purposes only. I'm not responsible if you want to use this
 for nefarious deeds. Please pay special attention to all local, state, and federal laws. Remember:
 "With great power comes great responsibility."
