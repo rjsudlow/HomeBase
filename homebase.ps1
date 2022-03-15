@@ -39,14 +39,17 @@ param (
 	[string] $PilotGroupNickname
 )
 
-Function Connect-MSGraph{
+Function Connect-MSGraph() {
 	# Simple single connect function.
 	Write-Host "[*] Connecting to Microsoft Graph. Please login with Admin credentials to guarantee deployment. `n" -ForegroundColor Yellow
 	Connect-MgGraph -Scopes "User.ReadWrite.All","Group.ReadWrite.All,Application.Read.All,Group.Read.All,Directory.Read.All,Policy.Read.All,Policy.Read.ConditionalAccess,Policy.ReadWrite.ConditionalAccess,RoleManagement.Read.All,RoleManagement.Read.Directory,User.Read.All"
 	Write-Host "[+] Successfully connected with Microsoft Graph. `n" -ForegroundColor Green
+	Connect-MsolService
+	Connect-AzureAD
+	Connect-MicrosoftTeams
 }
 
-Function Create-User{
+Function Create-User() {
 	# Create Intune Test User
 	# Reference: https://docs.microsoft.com/en-us/graph/api/user-post-users?view=graph-rest-1.0&tabs=powershell
 	# Reference: https://docs.microsoft.com/en-us/powershell/module/microsoft.graph.users/get-mguser?view=graph-powershell-beta
@@ -71,7 +74,7 @@ Function Create-User{
 	Write-Host "[+] UID for new user is: $PilotUID `n" -ForegroundColor Green
 }
 
-Function Create-Group{
+Function Create-Group() {
 	#Import-Module Microsoft.Graph.Groups
 	# Create Intune Pilot Group & Assign User to Group
 	# Reference: https://docs.microsoft.com/en-us/graph/api/group-post-groups?view=graph-rest-1.0&tabs=powershell
@@ -98,7 +101,7 @@ Function Create-Group{
 	Write-Host "[+] UID for group is: $GroupID `n" -ForegroundColor Green
 }
 
-Function Test-JSON(){
+Function Test-JSON() {
 	#Function taken from Microsoft PowerShell examples
 	param ($JSON)
 	    try {
@@ -250,7 +253,7 @@ Function Test-JSON(){
 	    }
 }
 
-Function Get-EndpointSecurityTemplate(){
+Function Get-EndpointSecurityTemplate() {
 
 	<#
 	.SYNOPSIS
@@ -286,7 +289,7 @@ Function Get-EndpointSecurityTemplate(){
 	    }
 }
 
-Function Add-DeviceCompliancePolicy(){
+Function Add-DeviceCompliancePolicy() {
 	#Function taken from Microsoft PowerShell examples
 	[cmdletbinding()]
 
@@ -321,7 +324,7 @@ Function Add-DeviceCompliancePolicy(){
 	    }
 }
 
-Function DeployConditionalAccess{
+Function DeployConditionalAccess() {
 	<#
 	References:
 	===========
@@ -656,43 +659,37 @@ Function DeployCompliance() {
 	#>
 }
 
-Function Apply-Hardening(){
-	Write-Host "The VAST majority of these hardening techniques come from the guru's at Soteria themselves. Theses changes that are made are only those that will NOT break anything; additional changes may need to be made manually." -ForegroundColor Yellow
+Function DeployHardening() {
+	Write-Host "The VAST majority of these hardening techniques come from the guru's at Soteria themselves. Theses changes that are made are only those that will NOT break anything; additional changes may need to be made manually." -ForegroundColor Cyan
+	Write-Host
 	Write-Host "To see Soteria's 365-Inspect script in action, download it from here: https://github.com/soteria-security/365Inspect" -ForegroundColor Cyan
+	Write-Host
 	# Restricting access to Company Settings via AAD PowerShell
-	Write-Host "Restricting AAD PowerShell Principal Agent..." -ForegroundColor Yellow
+	Write-Host "Restricting AAD PowerShell Principal Agent." -ForegroundColor Yellow
 	Set-MsolCompanySettings -UsersPermissionToCreateGroupsEnabled $false
 	Set-MsolCompanySettings -UsersPermissionToUserConsentToAppEnabled $false
-
-	Write-Host "Restricting access to create groups..." -ForegroundColor Yellow
+	Write-Host
+	Write-Host "Restricting access to create groups." -ForegroundColor Yellow
 	Set-MsolCompanySettings -UsersPermissionToCreateGroupsEnabled $false
-
-	Write-Host "Restricting access consent to apps on behalf of organisation..." -ForegroundColor Yellow
+	Write-Host
+	Write-Host "Restricting access consent to apps on behalf of organisation." -ForegroundColor Yellow
 	Set-MsolCompanySettings -UsersPermissionToUserConsentToAppEnabled $false
-
-	Write-Host "Blocking legacy authentication for email..." -ForegroundColor Yellow
+	Write-Host
+	Write-Host "Blocking legacy authentication for email." -ForegroundColor Yellow
 	Get-CASMailboxPlan | Set-CASMailboxPlan -PopEnabled $false -ImapEnabled $false -SmtpClientAuthenticationDisabled $true -ActiveSyncEnabled $false
-
-	Write-Host "Restrcting nosy user permissions..." -ForegroundColor Yellow
+	Write-Host
+	Write-Host "Restricting nosy user permissions." -ForegroundColor Yellow
 	Set-MsolCompanySettings -UsersPermissionToReadOtherUsersEnabled $false
-	Set-AzureADMSAuthorizationPolicy -id (Get-AzureADMSAuthorizationPolicy).id –AllowEmailVerifiedUsersToJoinOrganization $false
+	Set-AzureADMSAuthorizationPolicy -id (Get-AzureADMSAuthorizationPolicy).id -AllowEmailVerifiedUsersToJoinOrganization $false
 	Set-AzureADMSAuthorizationPolicy -id (Get-AzureADMSAuthorizationPolicy).id -AllowedToSignupEmailBasedSubscriptions $false
-
-	Write-Host "Disabling Teams P2P file transfer..." -ForegroundColor Yellow
+	Write-Host
+	Write-Host "Disabling Teams P2P file transfer." -ForegroundColor Yellow
 	Set-CsExternalUserCommunicationPolicy -EnableP2PFileTransfer $False
-
-	Write-Host "Blocking anonymous Teams users..." -ForegroundColor Yellow
-	Set-CsTeamsMeetingPolicy -Identity 'Policy Name' -AllowAnonymousUsersToJoinMeeting $false
-
-	Write-Host "Blocking anonymous Teams users from receiving invites..." -ForegroundColor Yellow
-	Set-CsTeamsMeetingPolicy -Identity 'Policy Name' -AllowAnonymousUsersToJoinMeeting $false
 }
 
-<#
 Connect-MSGraph
 Create-User
 Create-Group
 DeployConditionalAccess
 DeployCompliance
-#>
-Apply-Hardening
+DeployHardening
