@@ -40,13 +40,15 @@ You may need to run additional scripts/manually upload to apply baselines. As it
 
 ### Endpoint Manager
 * :white_check_mark: Apply Compliance Baselines
-  * :white_check_mark: Windows 10
-  * :white_check_mark: Android
-  * :white_check_mark: iOS
+  * Windows 10
+  * Android
+  * iOS
 * :white_check_mark: Apply Configuration Policies
+  * Defender for Endpoint
+  * Bitlocker
 * :white_check_mark: Apply MDM/MAM Policies
-  * :white_check_mark: iOS
-  * :white_check_mark: Android
+  * iOS
+  * Android
 * :white_check_mark: Apply Application Protection Policies
   * :white_check_mark: iOS
   * :white_check_mark: Android
