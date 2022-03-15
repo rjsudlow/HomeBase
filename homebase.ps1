@@ -583,331 +583,116 @@ Function DeployConditionalAccess{
 	New-MgIdentityConditionalAccessPolicy -BodyParameter $params
 }
 
+Function DeployCompliance() {
+	# Upload Compliance Policies from folder
+	$CompliancePolicyPath = ".\CompliancePolicies"
+	Get-ChildItem $CompliancePolicyPath | Foreach-Object {
+	  Write-host "File name found: $_ " -ForegroundColor Yellow
+	  $JSON_Data = Get-Content "$CompliancePolicyPath\$_"
+	  # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
+	  $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",apps@odata.context,deployedAppCount
+	  $JSON_Apps = $JSON_Convert.apps | select * -ExcludeProperty id,version
+	  $JSON_Convert | Add-Member -MemberType NoteProperty -Name 'apps' -Value @($JSON_Apps) -Force
+	  $DisplayName = $JSON_Convert.displayName
+	  $JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
+	  Write-Host "Adding Compliance Policy $DisplayName" -ForegroundColor Yellow
+	  Add-DeviceCompliancePolicy -JSON $JSON_Output
+	  Write-host "'$DisplayName' uploaded." -ForegroundColor Cyan
+	}
+
+	# Upload MDMApplication from folder
+	# March 15 2022: Issue uploading all Android MDMApplication JSON files.
+	#
+	# {"error":{"code":"BadRequest","message":"{\r\n  \"_version\": 3,\r\n  \"Message\": \"An error has occurred - Operation ID (for customer support): 00000000-0000-0000-0000-000000000000 - Activity ID: 36d08b49-8070-4064-adb1-ee88213899fb - Url: https://fef.msua08.manage.microsoft.com/AppLifecycle_2202/StatelessAppMetadataFEService/deviceAppManagement/mobileApps?api-version=5021-11-17\",\r\n  \"CustomApiErrorPhrase\": \"\",\r\n  \"RetryAfter\": null,\r\n  \"ErrorSourceService\": \"\",\r\n  \"HttpHeaders\": \"{}\"\r\n}","innerError":{"date":"2022-03-15T13:50:50","request-id":"36d08b49-8070-4064-adb1-ee88213899fb","client-request-id":"36d08b49-8070-4064-adb1-ee88213899fb"}}}
+	# Add-MDMApplication : Request to https://graph.microsoft.com/Beta/deviceAppManagement/mobileApps failed with HTTP
+	# Status BadRequest Bad Request At C:\Tools\PS\kiss365\test.ps1:338 char:1
+	#
+	$MAMPath = ".\MDMApplications-iOS"
+	Get-ChildItem $MAMPath | Foreach-Object {
+	  Write-host "File name found: $_." -ForegroundColor Yellow
+	  $JSON_Data = Get-Content "$MAMPath\$_"
+	  # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
+	  $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",uploadState,packageId,appIdentifier,publishingState,usedLicenseCount,totalLicenseCount,productKey,licenseType,packageIdentityName
+	  $DisplayName = $JSON_Convert.displayName
+	  $JSON_Output = $JSON_Convert | ConvertTo-Json
+	  Write-Host "Adding MDM Application Policy $_." -ForegroundColor Yellow
+	  Add-MDMApplication -JSON $JSON_Output
+	  Write-host "'$_' uploaded." -ForegroundColor Cyan
+	}
+
+	# Upload ManagedAppPolicy
+	$AppProtectionPath = ".\ManagedApplicationPolicies"
+	Get-ChildItem $AppProtectionPath | Foreach-Object {
+	  $JSON_Data = Get-Content "$AppProtectionPath\$_"
+	  # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
+	  $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",apps@odata.context,deployedAppCount
+	  $JSON_Apps = $JSON_Convert.apps | select * -ExcludeProperty id,version
+	  $JSON_Convert | Add-Member -MemberType NoteProperty -Name 'apps' -Value @($JSON_Apps) -Force
+	  $DisplayName = $JSON_Convert.displayName
+	  $JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
+	  # May need to change to $_ instead of $DisplayName
+	  write-host "Application Protection Policy $DisplayName" -ForegroundColor Yellow
+	  Add-ManagedAppPolicy -JSON $JSON_Output
+	  Write-Host "'$DisplayName' uploaded." -ForegroundColor Cyan
+	}
+
+	<#
+	# Upload Endpoint Security Policies
+	$EndpointSecurityPath = ".\EndpointSecurityPolicies"
+	Get-ChildItem $EndpointSecurityPath | Foreach-Object {
+		$JSON_Data = Get-Content "$EndpointSecurityPath\$_"
+		$JSON_Convert = $JSON_Data | ConvertFrom-Json
+		$JSON_DN = $JSON_Convert.displayName
+		$JSON_TemplateDisplayName = $JSON_Convert.TemplateDisplayName
+		$JSON_TemplateId = $JSON_Convert.templateId
+		Write-Host "Endpoint Security Policy '$JSON_DN' found..." -ForegroundColor Cyan
+		# Excluding certain properties from JSON that aren't required for import
+		$JSON_Convert = $JSON_Convert | Select-Object -Property * -ExcludeProperty TemplateDisplayName,TemplateId,versionInfo
+		$DisplayName = $JSON_Convert.displayName
+		$JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
+		Write-Host "Adding Endpoint Security Policy '$DisplayName'" -ForegroundColor Yellow
+		Add-EndpointSecurityPolicy -TemplateId $TemplateId -JSON $JSON_Output
+	}
+	#>
+}
+
 Function Apply-Hardening(){
+	Write-Host "The VAST majority of these hardening techniques come from the guru's at Soteria themselves. Theses changes that are made are only those that will NOT break anything; additional changes may need to be made manually." -ForegroundColor Yellow
+	Write-Host "To see Soteria's 365-Inspect script in action, download it from here: https://github.com/soteria-security/365Inspect" -ForegroundColor Cyan
+	# Restricting access to Company Settings via AAD PowerShell
+	Write-Host "Restricting AAD PowerShell Principal Agent..." -ForegroundColor Yellow
+	Set-MsolCompanySettings -UsersPermissionToCreateGroupsEnabled $false
+	Set-MsolCompanySettings -UsersPermissionToUserConsentToAppEnabled $false
 
+	Write-Host "Restricting access to create groups..." -ForegroundColor Yellow
+	Set-MsolCompanySettings -UsersPermissionToCreateGroupsEnabled $false
+
+	Write-Host "Restricting access consent to apps on behalf of organisation..." -ForegroundColor Yellow
+	Set-MsolCompanySettings -UsersPermissionToUserConsentToAppEnabled $false
+
+	Write-Host "Blocking legacy authentication for email..." -ForegroundColor Yellow
+	Get-CASMailboxPlan | Set-CASMailboxPlan -PopEnabled $false -ImapEnabled $false -SmtpClientAuthenticationDisabled $true -ActiveSyncEnabled $false
+
+	Write-Host "Restrcting nosy user permissions..." -ForegroundColor Yellow
+	Set-MsolCompanySettings -UsersPermissionToReadOtherUsersEnabled $false
+	Set-AzureADMSAuthorizationPolicy -id (Get-AzureADMSAuthorizationPolicy).id –AllowEmailVerifiedUsersToJoinOrganization $false
+	Set-AzureADMSAuthorizationPolicy -id (Get-AzureADMSAuthorizationPolicy).id -AllowedToSignupEmailBasedSubscriptions $false
+
+	Write-Host "Disabling Teams P2P file transfer..." -ForegroundColor Yellow
+	Set-CsExternalUserCommunicationPolicy -EnableP2PFileTransfer $False
+
+	Write-Host "Blocking anonymous Teams users..." -ForegroundColor Yellow
+	Set-CsTeamsMeetingPolicy -Identity 'Policy Name' -AllowAnonymousUsersToJoinMeeting $false
+
+	Write-Host "Blocking anonymous Teams users from receiving invites..." -ForegroundColor Yellow
+	Set-CsTeamsMeetingPolicy -Identity 'Policy Name' -AllowAnonymousUsersToJoinMeeting $false
 }
 
-Function Apply-EndpointSecurity() {
-	# Export function found here: https://github.com/microsoftgraph/powershell-intune-samples/blob/master/EndpointSecurity/EndpointSecurityPolicy_Export.ps1
-	  [cmdletbinding()]
-	  param
-	  (
-	      $TemplateId,
-	      $JSON
-	  )
-
-	  $graphApiVersion = "Beta"
-	  $ESP_resource = "deviceManagement/templates/$TemplateId/createInstance"
-	  Write-Verbose "Resource: $ESP_resource"
-
-	      try {
-	          if($JSON -eq "" -or $JSON -eq $null){
-	          write-host "No JSON specified, please specify valid JSON for the Endpoint Security Policy..." -f Red
-	          }
-
-	          else {
-	          Test-JSON -JSON $JSON
-	          $uri = "https://graph.microsoft.com/$graphApiVersion/$($ESP_resource)"
-	          Invoke-RestMethod -Uri $uri -Headers $authToken -Method Post -Body $JSON -ContentType "application/json"
-	          }
-	      }
-
-	      catch {
-	      $ex = $_.Exception
-	      $errorResponse = $ex.Response.GetResponseStream()
-	      $reader = New-Object System.IO.StreamReader($errorResponse)
-	      $reader.BaseStream.Position = 0
-	      $reader.DiscardBufferedData()
-	      $responseBody = $reader.ReadToEnd();
-	      Write-Host "Response content:`n$responseBody" -f Red
-	      Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
-	      write-host
-	      break
-	      }
-}
-
-Connect-MSGraph
 <#
+Connect-MSGraph
 Create-User
 Create-Group
 DeployConditionalAccess
-
-# Upload Compliance Policies from folder
-$CompliancePolicyPath = ".\CompliancePolicies"
-Get-ChildItem $CompliancePolicyPath | Foreach-Object {
-  Write-host "File name found: $_ " -ForegroundColor Yellow
-  $JSON_Data = Get-Content "$CompliancePolicyPath\$_"
-  # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
-  $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",apps@odata.context,deployedAppCount
-  $JSON_Apps = $JSON_Convert.apps | select * -ExcludeProperty id,version
-  $JSON_Convert | Add-Member -MemberType NoteProperty -Name 'apps' -Value @($JSON_Apps) -Force
-  $DisplayName = $JSON_Convert.displayName
-  $JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
-  Write-Host "Adding Compliance Policy $DisplayName" -ForegroundColor Yellow
-  Add-DeviceCompliancePolicy -JSON $JSON_Output
-  Write-host "'$DisplayName' uploaded." -ForegroundColor Cyan
-}
-
-# Upload MDMApplication from folder
-# March 15 2022: Issue uploading all Android MDMApplication JSON files.
-#
-# {"error":{"code":"BadRequest","message":"{\r\n  \"_version\": 3,\r\n  \"Message\": \"An error has occurred - Operation ID (for customer support): 00000000-0000-0000-0000-000000000000 - Activity ID: 36d08b49-8070-4064-adb1-ee88213899fb - Url: https://fef.msua08.manage.microsoft.com/AppLifecycle_2202/StatelessAppMetadataFEService/deviceAppManagement/mobileApps?api-version=5021-11-17\",\r\n  \"CustomApiErrorPhrase\": \"\",\r\n  \"RetryAfter\": null,\r\n  \"ErrorSourceService\": \"\",\r\n  \"HttpHeaders\": \"{}\"\r\n}","innerError":{"date":"2022-03-15T13:50:50","request-id":"36d08b49-8070-4064-adb1-ee88213899fb","client-request-id":"36d08b49-8070-4064-adb1-ee88213899fb"}}}
-# Add-MDMApplication : Request to https://graph.microsoft.com/Beta/deviceAppManagement/mobileApps failed with HTTP
-# Status BadRequest Bad Request At C:\Tools\PS\kiss365\test.ps1:338 char:1
-#
-$MAMPath = ".\MDMApplications-iOS"
-Get-ChildItem $MAMPath | Foreach-Object {
-  Write-host "File name found: $_." -ForegroundColor Yellow
-  $JSON_Data = Get-Content "$MAMPath\$_"
-  # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
-  $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",uploadState,packageId,appIdentifier,publishingState,usedLicenseCount,totalLicenseCount,productKey,licenseType,packageIdentityName
-  $DisplayName = $JSON_Convert.displayName
-  $JSON_Output = $JSON_Convert | ConvertTo-Json
-  Write-Host "Adding MDM Application Policy $_." -ForegroundColor Yellow
-  Add-MDMApplication -JSON $JSON_Output
-  Write-host "'$_' uploaded." -ForegroundColor Cyan
-}
-
-# Upload ManagedAppPolicy
-$AppProtectionPath = ".\ManagedApplicationPolicies"
-Get-ChildItem $AppProtectionPath | Foreach-Object {
-  $JSON_Data = Get-Content "$AppProtectionPath\$_"
-  # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
-  $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",apps@odata.context,deployedAppCount
-  $JSON_Apps = $JSON_Convert.apps | select * -ExcludeProperty id,version
-  $JSON_Convert | Add-Member -MemberType NoteProperty -Name 'apps' -Value @($JSON_Apps) -Force
-  $DisplayName = $JSON_Convert.displayName
-  $JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
-  # May need to change to $_ instead of $DisplayName
-  write-host "Application Protection Policy $DisplayName" -ForegroundColor Yellow
-  Add-ManagedAppPolicy -JSON $JSON_Output
-  Write-Host "'$DisplayName' uploaded." -ForegroundColor Cyan
-}
+DeployCompliance
 #>
-
-# Get Templates for Endpoint Security policies
-Function Get-EndpointSecurityTemplate(){
-
-	<#
-	.SYNOPSIS
-	This function is used to get all Endpoint Security templates using the Graph API REST interface
-	.DESCRIPTION
-	The function connects to the Graph API Interface and gets all Endpoint Security templates
-	.EXAMPLE
-	Get-EndpointSecurityTemplate
-	Gets all Endpoint Security Templates in Endpoint Manager
-	.NOTES
-	NAME: Get-EndpointSecurityTemplate
-	#>
-
-
-	$graphApiVersion = "Beta"
-	$ESP_resource = "deviceManagement/templates?`$filter=(isof(%27microsoft.graph.securityBaselineTemplate%27))"
-
-	    try {
-
-	        $uri = "https://graph.microsoft.com/$graphApiVersion/$($ESP_resource)"
-	        (Invoke-RestMethod -Method Get -Uri $uri -Headers $authToken).value
-
-	    }
-
-	    catch {
-
-	    $ex = $_.Exception
-	    $errorResponse = $ex.Response.GetResponseStream()
-	    $reader = New-Object System.IO.StreamReader($errorResponse)
-	    $reader.BaseStream.Position = 0
-	    $reader.DiscardBufferedData()
-	    $responseBody = $reader.ReadToEnd();
-	    Write-Host "Response content:`n$responseBody" -f Red
-	    Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
-	    write-host
-	    break
-
-	    }
-
-}
-
-####################################################
-
-Function Add-EndpointSecurityPolicy(){
-
-  <#
-  .SYNOPSIS
-  This function is used to add an Endpoint Security policy using the Graph API REST interface
-  .DESCRIPTION
-  The function connects to the Graph API Interface and adds an Endpoint Security  policy
-  .EXAMPLE
-  Add-EndpointSecurityDiskEncryptionPolicy -JSON $JSON -TemplateId $templateId
-  Adds an Endpoint Security Policy in Endpoint Manager
-  .NOTES
-  NAME: Add-EndpointSecurityPolicy
-  #>
-
-  [cmdletbinding()]
-
-  param
-  (
-      $TemplateId,
-      $JSON
-  )
-
-  $graphApiVersion = "Beta"
-  $ESP_resource = "deviceManagement/templates/$TemplateId/createInstance"
-  Write-Verbose "Resource: $ESP_resource"
-
-      try {
-
-          if($JSON -eq "" -or $JSON -eq $null){
-
-          write-host "No JSON specified, please specify valid JSON for the Endpoint Security Policy..." -f Red
-
-          }
-
-          else {
-
-          Test-JSON -JSON $JSON
-
-          $uri = "https://graph.microsoft.com/$graphApiVersion/$($ESP_resource)"
-          Invoke-RestMethod -Uri $uri -Headers $authToken -Method Post -Body $JSON -ContentType "application/json"
-
-          }
-
-      }
-
-      catch {
-
-      $ex = $_.Exception
-      $errorResponse = $ex.Response.GetResponseStream()
-      $reader = New-Object System.IO.StreamReader($errorResponse)
-      $reader.BaseStream.Position = 0
-      $reader.DiscardBufferedData()
-      $responseBody = $reader.ReadToEnd();
-      Write-Host "Response content:`n$responseBody" -f Red
-      Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
-      write-host
-      break
-
-      }
-
-}
-
-<#
-$JSON_Data = gc "$ImportPath"
-$JSON_Convert = $JSON_Data | ConvertFrom-Json
-$JSON_DN = $JSON_Convert.displayName
-$JSON_TemplateDisplayName = $JSON_Convert.TemplateDisplayName
-$JSON_TemplateId = $JSON_Convert.templateId
-
-Write-Host
-Write-Host "Endpoint Security Policy '$JSON_DN' found..." -ForegroundColor Cyan
-Write-Host "Template Display Name: $JSON_TemplateDisplayName"
-Write-Host "Template ID: $JSON_TemplateId"
-#>
-####################################################
-
-# Get all Endpoint Security Templates
-$Templates = Get-EndpointSecurityTemplate
-
-####################################################
-
-# Checking if templateId from JSON is a valid templateId
-$ES_Template = $Templates | ?  { $_.id -eq $JSON_TemplateId }
-
-####################################################
-
-# If template is a baseline Edge, MDATP or Windows, use templateId specified
-if(($ES_Template.templateType -eq "microsoftEdgeSecurityBaseline") -or ($ES_Template.templateType -eq "securityBaseline") -or ($ES_Template.templateType -eq "advancedThreatProtectionSecurityBaseline")){
-
-    $TemplateId = $JSON_Convert.templateId
-
-}
-
-####################################################
-
-# Else If not a baseline, check if template is deprecated
-elseif($ES_Template){
-
-    # if template isn't deprecated use templateId
-    if($ES_Template.isDeprecated -eq $false){
-
-        $TemplateId = $JSON_Convert.templateId
-
-    }
-
-    # If template deprecated, look for lastest version
-    elseif($ES_Template.isDeprecated -eq $true) {
-
-        $Template = $Templates | ? { $_.displayName -eq "$JSON_TemplateDisplayName" }
-
-        $Template = $Template | ? { $_.isDeprecated -eq $false }
-
-        $TemplateId = $Template.id
-
-    }
-
-}
-
-####################################################
-
-# Else If Imported JSON template ID can't be found check if Template Display Name can be used
-elseif($ES_Template -eq $null){
-
-    Write-Host "Didn't find Template with ID $JSON_TemplateId, checking if Template DisplayName '$JSON_TemplateDisplayName' can be used..." -ForegroundColor Red
-    $ES_Template = $Templates | ?  { $_.displayName -eq "$JSON_TemplateDisplayName" }
-
-    If($ES_Template){
-
-        if(($ES_Template.templateType -eq "securityBaseline") -or ($ES_Template.templateType -eq "advancedThreatProtectionSecurityBaseline")){
-
-            Write-Host
-            Write-Host "TemplateID '$JSON_TemplateId' with template Name '$JSON_TemplateDisplayName' doesn't exist..." -ForegroundColor Red
-            Write-Host "Importing using the updated template could fail as settings specified may not be included in the latest template..." -ForegroundColor Red
-            Write-Host
-            break
-
-        }
-
-        else {
-
-            Write-Host "Template with displayName '$JSON_TemplateDisplayName' found..." -ForegroundColor Green
-
-            $Template = $ES_Template | ? { $_.isDeprecated -eq $false }
-
-            $TemplateId = $Template.id
-
-        }
-
-    }
-
-    else {
-
-        Write-Host
-        Write-Host "TemplateID '$JSON_TemplateId' with template Name '$JSON_TemplateDisplayName' doesn't exist..." -ForegroundColor Red
-        Write-Host "Importing using the updated template could fail as settings specified may not be included in the latest template..." -ForegroundColor Red
-        Write-Host
-        break
-
-    }
-
-}
-
-####################################################
-
-
-# Upload Endpoint Security Policies
-$EndpointSecurityPath = ".\EndpointSecurityPolicies"
-Get-ChildItem $EndpointSecurityPath | Foreach-Object {
-	$JSON_Data = Get-Content "$EndpointSecurityPath\$_"
-	$JSON_Convert = $JSON_Data | ConvertFrom-Json
-	$JSON_DN = $JSON_Convert.displayName
-	$JSON_TemplateDisplayName = $JSON_Convert.TemplateDisplayName
-	$JSON_TemplateId = $JSON_Convert.templateId
-	Write-Host "Endpoint Security Policy '$JSON_DN' found..." -ForegroundColor Cyan
-	# Excluding certain properties from JSON that aren't required for import
-	$JSON_Convert = $JSON_Convert | Select-Object -Property * -ExcludeProperty TemplateDisplayName,TemplateId,versionInfo
-	$DisplayName = $JSON_Convert.displayName
-	$JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
-	Write-Host "Adding Endpoint Security Policy '$DisplayName'" -ForegroundColor Yellow
-	Add-EndpointSecurityPolicy -TemplateId $TemplateId -JSON $JSON_Output
-}
+Apply-Hardening

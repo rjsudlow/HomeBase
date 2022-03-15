@@ -3,15 +3,19 @@
 1. Azure PowerShell Service Principal Assignment Missing
 * Restrict Access to Admin Portal:
   * AAD > Settings > “Restrict access to Azure AD administration portal” > Yes
+
 * Restrict Access to invite Guests:
   * AAD > External Identities > External collaboration settings > “Members can invite” >  No; “Guests can invite” > No
+
 * Restrict Access to Create Groups:
   * AAD> Azure Active Directory > User Settings > “Users can register applications” > No
   * "Set-MsolCompanySettings -UsersPermissionToCreateGroupsEnabled $false"
   * Restrict Access to App Registrations, Application Consent, and Adding Gallery Apps
   * "Set-MsolCompanySettings -UsersPermissionToUserConsentToAppEnabled $false
+
 * Block Legacy Auth for Email:
   * "Get-CASMailboxPlan | Set-CASMailboxPlan -PopEnabled $false -ImapEnabled $false -SmtpClientAuthenticationDisabled $true -ActiveSyncEnabled $false"
+
 * Review and set excessive user permissions
   * "Set-MsolCompanySettings -UsersPermissionToReadOtherUsersEnabled $false"
   * "Set-AzureADMSAuthorizationPolicy -id (Get-AzureADMSAuthorizationPolicy).id –AllowEmailVerifiedUsersToJoinOrganization $false"

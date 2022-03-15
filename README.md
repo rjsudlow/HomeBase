@@ -11,6 +11,10 @@ Powershell script used to deploy baseline configurations & best practice hardeni
 
 The script can be used to deploy baseline changes in Greenfield or Brownfield deployment. The process flow creates a test user and group, assigns the test user to the created group, and will deploy all appropriate protections against the created group. This process is completed to prevent any disruption to business operations and locking people out.
 
+For better customisation, the script has been designed to read JSON files based on the folder structure. If you or your organisation would like to apply different sets of controls, export the JSON file and import it to the appropriate folder.
+
+`Example: For different MDM Applications to provide MAM policies for, upload the JSON file to the Android or iOS folder and it will be applied when running the script.`
+
 Special thanks to Soteria for the great 365-Inspect tool to help identify best practice improvements in all things 365.
 
 ## :arrow_down: Download
@@ -60,6 +64,7 @@ You may need to run additional scripts/manually upload to apply baselines. As it
 ### To Do
 * Assign policies and templates to group created as part of script.
 * Upload Endpoint Security Policies from folder.
+* Apply EOP Policies
 
 
 ## Disclaimer
