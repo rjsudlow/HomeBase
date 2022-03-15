@@ -30,10 +30,9 @@ You may need to run additional scripts/manually upload to apply baselines. As it
 * Use `Resources\ImportSecurityPolicies.ps1` to upload the 3 files located in `EndpointSecurityPolicies`.
 
 
-## :compass: Roadmap
+## :compass: Roadmap/Current Hardening Steps
 
 ### AzureAD
-* Apply 365Inspect Controls
 * :white_check_mark: Create Pilot User (AzureAD)
 * :white_check_mark: Create Pilot Group (AzureAD)
 * :white_check_mark: Apply Conditional Access (AzureAD)
@@ -50,8 +49,8 @@ You may need to run additional scripts/manually upload to apply baselines. As it
   * iOS
   * Android
 * :white_check_mark: Apply Application Protection Policies
-  * :white_check_mark: iOS
-  * :white_check_mark: Android
+  * iOS
+  * Android
 
 
 ### M365/Azure/SharePoint/Teams
