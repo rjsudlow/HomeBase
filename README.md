@@ -39,15 +39,15 @@ You may need to run additional scripts/manually upload to apply baselines. As it
 * :white_check_mark: Apply Conditional Access (AzureAD)
 
 ### Endpoint Manager
-* Apply Compliance Baselines
+* :white_check_mark: Apply Compliance Baselines
   * :white_check_mark: Windows 10
   * :white_check_mark: Android
   * :white_check_mark: iOS
-* Apply Configuration Policies
-* Apply MDM/MAM Policies
+* :white_check_mark: Apply Configuration Policies
+* :white_check_mark: Apply MDM/MAM Policies
   * :white_check_mark: iOS
   * :white_check_mark: Android
-* Apply Application Protection Policies
+* :white_check_mark: Apply Application Protection Policies
   * :white_check_mark: iOS
   * :white_check_mark: Android
 
