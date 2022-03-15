@@ -1,6 +1,8 @@
+#################################
+##      Utility Functions      ##
+#################################
 
-
-function Get-AuthToken {
+Function Get-AuthToken {
   [cmdletbinding()]
   param
   ([Parameter(Mandatory=$true)]$User)
@@ -80,25 +82,34 @@ function Get-AuthToken {
   }
 
 }
-####################################################
 
-Function Add-MDMApplication(){
-  [cmdletbinding()]
-  param($JSON)
-  $graphApiVersion = "Beta"
-  $App_resource = "deviceAppManagement/mobileApps"
-  Connect-MgGraph -Scopes "User.ReadWrite.All","Group.ReadWrite.All,Application.Read.All,Group.Read.All,Directory.Read.All,Policy.Read.All,Policy.Read.ConditionalAccess,Policy.ReadWrite.ConditionalAccess,RoleManagement.Read.All,RoleManagement.Read.Directory,User.Read.All,DeviceManagementApps.Read.All,DeviceManagementApps.ReadWrite.All"
-  Write-Host "[+] Successfully connected with Microsoft Graph. `n" -ForegroundColor Green
-  if(!$JSON) {
-    write-host "No JSON was passed to the function, provide a JSON variable" -f Red
-    break
+Function Auth() {
+  # Microsoft default authentication method. Checking if authToken exists before running authentication:
+  # Works for PowerShell 5.x; Not PowerShell 7.x
+  if($global:authToken) {
+    # Setting DateTime to Universal time to work in all timezones
+    $DateTime = (Get-Date).ToUniversalTime()
+    # If the authToken exists checking when it expires
+    $TokenExpires = ($authToken.ExpiresOn.datetime - $DateTime).Minutes
+    if($TokenExpires -le 0) {
+      write-host "Authentication Token expired" $TokenExpires "minutes ago" -ForegroundColor Yellow
+      # Defining User Principal Name if not present
+      if($User -eq $null -or $User -eq ""){
+        $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
+      }
+      $global:authToken = Get-AuthToken -User $User
+    }
   }
 
-  Test-JSON -JSON $JSON
-  $uri = "https://graph.microsoft.com/$graphApiVersion/$($App_resource)"
-  Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/json" -Body $JSON -Headers $authToken
+  # Authentication doesn't exist, calling Get-AuthToken function
+  else {
+    if($User -eq $null -or $User -eq "") {
+      $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
+    }
+    # Getting the authorization token
+    $global:authToken = Get-AuthToken -User $User
+  }
 }
-####################################################
 
 Function Test-JSON(){
   param ($JSON)
@@ -118,49 +129,208 @@ Function Test-JSON(){
   }
 
 }
-####################################################
 
-# Microsoft default authentication method. Checking if authToken exists before running authentication:
-# Works for PowerShell 5.x; Not PowerShell 7.x
+Function Connect-MSGraph() {
+	# Simple single connect function.
+	Write-Host "[*] Connecting to Microsoft Graph. Please login with Admin credentials to guarantee deployment. `n" -ForegroundColor Yellow
+	Connect-MgGraph -Scopes "User.ReadWrite.All","Group.ReadWrite.All,Application.Read.All,Group.Read.All,Directory.Read.All,Policy.Read.All,Policy.Read.ConditionalAccess,Policy.ReadWrite.ConditionalAccess,RoleManagement.Read.All,RoleManagement.Read.Directory,User.Read.All"
+	Write-Host "[+] Successfully connected with Microsoft Graph. `n" -ForegroundColor Green
+	#Connect-MsolService
+	#Connect-AzureAD
+	#Connect-MicrosoftTeams
+}
 
-<#
-if($global:authToken) {
-  # Setting DateTime to Universal time to work in all timezones
-  $DateTime = (Get-Date).ToUniversalTime()
-  # If the authToken exists checking when it expires
-  $TokenExpires = ($authToken.ExpiresOn.datetime - $DateTime).Minutes
-  if($TokenExpires -le 0) {
-    write-host "Authentication Token expired" $TokenExpires "minutes ago" -ForegroundColor Yellow
-    # Defining User Principal Name if not present
-    if($User -eq $null -or $User -eq ""){
-      $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
+#################################
+##    Deployment Functions     ##
+#################################
+
+Function Create-User() {
+	# Create Intune Test User
+	# Reference: https://docs.microsoft.com/en-us/graph/api/user-post-users?view=graph-rest-1.0&tabs=powershell
+	# Reference: https://docs.microsoft.com/en-us/powershell/module/microsoft.graph.users/get-mguser?view=graph-powershell-beta
+	#Import-Module Microsoft.Graph.Users
+	Write-Host "[*] Creating Pilot User with name of $PilotUserName@$Domain. `n" -ForegroundColor Yellow
+	$params = @{
+		AccountEnabled = $true
+		DisplayName = $PilotDisplayName
+		MailNickname = $PilotUserName
+		UserPrincipalName = "$PilotUserName@$Domain"
+		PasswordProfile = @{
+			ForceChangePasswordNextSignIn = $true
+			Password = "TempPass123**"
+		}
+	}
+	New-MgUser -BodyParameter $params
+	Write-Host "[*] Assigning $PilotUserName UID to variable... `n" -ForegroundColor Yellow
+	# Appropriate way to get UID as variable:
+	# $test = (Get-MgUser -Filter "displayName eq 'RJ Sudlow'" -Property Id).Id
+	$PilotUID = (Get-MgUser -Filter "displayName eq '$PilotDisplayName'").Id
+	$global:PilotUID = $PilotUID
+	Write-Host "[+] UID for new user is: $PilotUID `n" -ForegroundColor Green
+}
+
+Function Create-Group() {
+	#Import-Module Microsoft.Graph.Groups
+	# Create Intune Pilot Group & Assign User to Group
+	# Reference: https://docs.microsoft.com/en-us/graph/api/group-post-groups?view=graph-rest-1.0&tabs=powershell
+	Write-Host "[*] Creating group..." -ForegroundColor Yellow
+	#$MemberURL = "https://graph.microsoft.com/v1.0/users/$PilotUID"
+	$params = @{
+		Description = "Group for all users with Intune licenses."
+		DisplayName = "$PilotGroup"
+		GroupTypes = @(
+		)
+		MailEnabled = $false
+		MailNickname = "$PilotGroupNickname"
+		SecurityEnabled = $true
+		"Owners@odata.bind" = @(
+	    "https://graph.microsoft.com/v1.0/users/$PilotUID"
+		)
+		"Members@odata.bind" = @(
+			"https://graph.microsoft.com/v1.0/users/$PilotUID")
+	}
+	New-MgGroup -BodyParameter $params
+	# Need to find how to get Group ID
+	$GroupID = (Get-MgGroup -Filter "displayName eq '$PilotGroup'").Id
+	$global:GroupID = $GroupID
+	Write-Host "[+] UID for group is: $GroupID `n" -ForegroundColor Green
+}
+
+Function Add-MDMApplication(){
+  [cmdletbinding()]
+  param($JSON)
+  $graphApiVersion = "Beta"
+  $App_resource = "deviceAppManagement/mobileApps"
+  if(!$JSON) {
+    write-host "[!] No JSON was passed to the function, provide a JSON variable" -f Red
+    break
+  }
+
+  Test-JSON -JSON $JSON
+  $uri = "https://graph.microsoft.com/$graphApiVersion/$($App_resource)"
+  Invoke-RestMethod -Uri $uri -Method Post -ContentType "application/json" -Body $JSON -Headers $authToken
+}
+
+Function MDMApplication() {
+  # Upload iOS MDM applications
+  $MAMPath = (Get-Item .).FullName + "\MDMApplications-iOS"
+  Get-ChildItem $MAMPath | Foreach-Object {
+    Write-host "[*] File name found: $MAMPath\$_." -f Yellow
+    $JSON_Data = Get-Content "$MAMPath\$_"
+    # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
+    $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",uploadState,packageId,appIdentifier,publishingState,usedLicenseCount,totalLicenseCount,productKey,licenseType,packageIdentityName
+    $DisplayName = $JSON_Convert.displayName
+    $JSON_Output = $JSON_Convert | ConvertTo-Json
+    Write-Host "[*] Adding MDM Application Policy $_ ..." -f Yellow
+    Add-MDMApplication -JSON $JSON_Output
+    Write-host "[+] '$_' uploaded." -f Green
+  }
+}
+
+Function Add-DeviceCompliancePolicy(){
+  [cmdletbinding()]
+  param($JSON)
+  $graphApiVersion = "v1.0"
+  $Resource = "deviceManagement/deviceCompliancePolicies"
+  try {
+    if($JSON -eq "" -or $JSON -eq $null){
+      write-host "[!] No JSON specified. Please select a policy..." -f Red
     }
-    $global:authToken = Get-AuthToken -User $User
+
+    else {
+      Test-JSON -JSON $JSON
+      $uri = "https://graph.microsoft.com/$graphApiVersion/$($Resource)"
+      Invoke-RestMethod -Uri $uri -Headers $authToken -Method Post -Body $JSON -ContentType "application/json"
+    }
+  }
+
+  catch {
+    Write-Host
+    $ex = $_.Exception
+    $errorResponse = $ex.Response.GetResponseStream()
+    $reader = New-Object System.IO.StreamReader($errorResponse)
+    $reader.BaseStream.Position = 0
+    $reader.DiscardBufferedData()
+    $responseBody = $reader.ReadToEnd();
+    Write-Host "[!] Response content:`n$responseBody" -f Red
+    Write-Error "[!] Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
+    write-host
+    break
   }
 }
 
-# Authentication doesn't exist, calling Get-AuthToken function
-else {
-  if($User -eq $null -or $User -eq "") {
-    $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
+Function DeviceCompliancePolicy () {
+	# Upload Compliance Policies from folder
+	$CompliancePolicyPath = (Get-Item .).FullName + ".\CompliancePolicies"
+	Get-ChildItem $CompliancePolicyPath | Foreach-Object {
+	  Write-host "[*] File name found: $CompliancePolicyPath\$_ " -f Yellow
+	  $JSON_Data = Get-Content "$CompliancePolicyPath\$_"
+	  # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
+	  $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",apps@odata.context,deployedAppCount
+	  $JSON_Apps = $JSON_Convert.apps | select * -ExcludeProperty id,version
+	  $JSON_Convert | Add-Member -MemberType NoteProperty -Name 'apps' -Value @($JSON_Apps) -Force
+	  $DisplayName = $JSON_Convert.displayName
+	  $JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
+	  Write-Host "[*] Adding Device Compliance Policy $DisplayName ..." -f Yellow
+	  Add-DeviceCompliancePolicy -JSON $JSON_Output
+	  Write-host "[+] '$DisplayName' uploaded." -f Cyan
+	}
+}
+
+Function Add-ManagedAppPolicy() {
+	[cmdletbinding()]
+	param($JSON)
+	$graphApiVersion = "Beta"
+	$Resource = "deviceAppManagement/managedAppPolicies"
+  try {
+  	if($JSON -eq "" -or $JSON -eq $null){
+    	write-host "No JSON specified, please specify valid JSON for a Managed App Policy..." -f Red
+    }
+
+    else {
+      Test-JSON -JSON $JSON
+      $uri = "https://graph.microsoft.com/$graphApiVersion/$($Resource)"
+      Invoke-RestMethod -Uri $uri -Headers $authToken -Method Post -Body $JSON -ContentType "application/json"
+    }
   }
-  # Getting the authorization token
-  $global:authToken = Get-AuthToken -User $User
+  catch {
+    Write-Host
+    $ex = $_.Exception
+    $errorResponse = $ex.Response.GetResponseStream()
+    $reader = New-Object System.IO.StreamReader($errorResponse)
+    $reader.BaseStream.Position = 0
+    $reader.DiscardBufferedData()
+    $responseBody = $reader.ReadToEnd();
+    Write-Host "Response content:`n$responseBody" -f Red
+    Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
+    write-host
+    break
+  }
 }
-#>
-#endregion
 
-$MAMPath = (Get-Item .).FullName + "\MDMApplications-iOS"
-$MAMPath
-
-Get-ChildItem $MAMPath | Foreach-Object {
-  Write-host "File name found: $_." -ForegroundColor Yellow
-  $JSON_Data = Get-Content "$_"
-  # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
-  $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",uploadState,packageId,appIdentifier,publishingState,usedLicenseCount,totalLicenseCount,productKey,licenseType,packageIdentityName
-  $DisplayName = $JSON_Convert.displayName
-  $JSON_Output = $JSON_Convert | ConvertTo-Json
-  Write-Host "Adding MDM Application Policy $_." -ForegroundColor Yellow
-  Add-MDMApplication -JSON $JSON_Output
-  Write-host "'$_' uploaded." -ForegroundColor Cyan
+Function ManagedAppPolicy() {
+  # Upload ManagedAppPolicy
+	$AppProtectionPath = (Get-Item .).FullName + ".\ManagedApplicationPolicies"
+	Get-ChildItem $AppProtectionPath | Foreach-Object {
+    Write-host "[*] File name found: $AppProtectionPath\$_ " -f Yellow
+	  $JSON_Data = Get-Content "$AppProtectionPath\$_"
+	  # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
+	  $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",apps@odata.context,deployedAppCount
+	  $JSON_Apps = $JSON_Convert.apps | select * -ExcludeProperty id,version
+	  $JSON_Convert | Add-Member -MemberType NoteProperty -Name 'apps' -Value @($JSON_Apps) -Force
+	  $DisplayName = $JSON_Convert.displayName
+	  $JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
+	  # May need to change to $_ instead of $DisplayName
+	  write-host "[*] Adding Application Protection Policy $DisplayName ..." -f Yellow
+	  Add-ManagedAppPolicy -JSON $JSON_Output
+	  Write-Host "[+] '$DisplayName' uploaded." -f Green
+	}
 }
+
+#################################
+##     Execution Functions     ##
+#################################
+Auth
+#MDMApplication
+#DeviceCompliancePolicy
+ManagedAppPolicy
