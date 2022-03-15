@@ -84,64 +84,45 @@ Write-Host "Checking for AzureAD module..."
     }
 
 [System.Reflection.Assembly]::LoadFrom($adal) | Out-Null
-
 [System.Reflection.Assembly]::LoadFrom($adalforms) | Out-Null
-
 $clientId = "d1ddf0e4-d672-4dae-b554-9d5bdfd93547"
-
 $redirectUri = "urn:ietf:wg:oauth:2.0:oob"
-
 $resourceAppIdURI = "https://graph.microsoft.com"
-
 $authority = "https://login.microsoftonline.com/$Tenant"
 
     try {
-
     $authContext = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext" -ArgumentList $authority
 
     # https://msdn.microsoft.com/en-us/library/azure/microsoft.identitymodel.clients.activedirectory.promptbehavior.aspx
     # Change the prompt behaviour to force credentials each time: Auto, Always, Never, RefreshSession
-
     $platformParameters = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.PlatformParameters" -ArgumentList "Auto"
-
     $userId = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier" -ArgumentList ($User, "OptionalDisplayableId")
-
     $authResult = $authContext.AcquireTokenAsync($resourceAppIdURI,$clientId,$redirectUri,$platformParameters,$userId).Result
 
         # If the accesstoken is valid then create the authentication header
-
         if($authResult.AccessToken){
-
         # Creating header for Authorization token
-
         $authHeader = @{
             'Content-Type'='application/json'
             'Authorization'="Bearer " + $authResult.AccessToken
             'ExpiresOn'=$authResult.ExpiresOn
             }
-
         return $authHeader
-
         }
 
         else {
-
         Write-Host
         Write-Host "Authorization Access Token is null, please re-run authentication..." -ForegroundColor Red
         Write-Host
         break
-
         }
-
     }
 
     catch {
-
     write-host $_.Exception.Message -f Red
     write-host $_.Exception.ItemName -f Red
     write-host
     break
-
     }
 
 }
@@ -357,7 +338,7 @@ $Resource = "deviceManagement/deviceCompliancePolicies"
       break
     }
 }
-
+<#
 # Upload Compliance Policies from folder
 $CompliancePolicyPath = "..\CompliancePolicies"
 Get-ChildItem $CompliancePolicyPath | Foreach-Object {
@@ -369,32 +350,36 @@ Get-ChildItem $CompliancePolicyPath | Foreach-Object {
   $JSON_Convert | Add-Member -MemberType NoteProperty -Name 'apps' -Value @($JSON_Apps) -Force
   $DisplayName = $JSON_Convert.displayName
   $JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
-  # May need to change to $_ instead of $DisplayName
   Write-Host "Adding Compliance Policy $DisplayName" -ForegroundColor Yellow
   Add-DeviceCompliancePolicy -JSON $JSON_Output
   Write-host "'$DisplayName' uploaded." -ForegroundColor Cyan
 }
 
-# Upload MDMApplication from foler
-$MAMPath = "..\MDMApplications"
+# Upload MDMApplication from folder
+# March 15 2022: Issue uploading all Android MDMApplication JSON files.
+#
+# {"error":{"code":"BadRequest","message":"{\r\n  \"_version\": 3,\r\n  \"Message\": \"An error has occurred - Operation ID (for customer support): 00000000-0000-0000-0000-000000000000 - Activity ID: 36d08b49-8070-4064-adb1-ee88213899fb - Url: https://fef.msua08.manage.microsoft.com/AppLifecycle_2202/StatelessAppMetadataFEService/deviceAppManagement/mobileApps?api-version=5021-11-17\",\r\n  \"CustomApiErrorPhrase\": \"\",\r\n  \"RetryAfter\": null,\r\n  \"ErrorSourceService\": \"\",\r\n  \"HttpHeaders\": \"{}\"\r\n}","innerError":{"date":"2022-03-15T13:50:50","request-id":"36d08b49-8070-4064-adb1-ee88213899fb","client-request-id":"36d08b49-8070-4064-adb1-ee88213899fb"}}}
+# Add-MDMApplication : Request to https://graph.microsoft.com/Beta/deviceAppManagement/mobileApps failed with HTTP
+# Status BadRequest Bad Request At C:\Tools\PS\kiss365\test.ps1:338 char:1
+#
+
+$MAMPath = "..\MDMApplications-iOS"
 Get-ChildItem $MAMPath | Foreach-Object {
-  Write-host "File name found: $_" -ForegroundColor Yellow
+  Write-host "File name found: $_." -ForegroundColor Yellow
   $JSON_Data = Get-Content "$MAMPath\$_"
-  Write-host
   # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
-  $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,'@odata.context',uploadState,packageId,appIdentifier,publishingState,usedLicenseCount,totalLicenseCount,productKey,licenseType,packageIdentityName
+  $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",uploadState,packageId,appIdentifier,publishingState,usedLicenseCount,totalLicenseCount,productKey,licenseType,packageIdentityName
   $DisplayName = $JSON_Convert.displayName
   $JSON_Output = $JSON_Convert | ConvertTo-Json
-  # May need to change to $_ instead of $DisplayName
-  Write-Host "MDM Application Policy $DisplayName found." -ForegroundColor Yellow
+  Write-Host "Adding MDM Application Policy $_." -ForegroundColor Yellow
   Add-MDMApplication -JSON $JSON_Output
-  Write-host "'$DisplayName' uploaded." -ForegroundColor Cyan
+  Write-host "'$_' uploaded." -ForegroundColor Cyan
 }
-
+#>
 # Upload ManagedAppPolicy
 $AppProtectionPath = "..\ManagedApplicationPolicies"
 Get-ChildItem $AppProtectionPath | Foreach-Object {
-  $JSON_Data = Get-content "$AppProtectionPath\$_"
+  $JSON_Data = Get-Content "$AppProtectionPath\$_"
   # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
   $JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,"@odata.context",apps@odata.context,deployedAppCount
   $JSON_Apps = $JSON_Convert.apps | select * -ExcludeProperty id,version

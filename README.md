@@ -33,8 +33,6 @@ To add
 * :white_check_mark: Create Pilot User (AzureAD)
 * :white_check_mark: Create Pilot Group (AzureAD)
 * :white_check_mark: Apply Conditional Access (AzureAD)
-* Apply Compliance Policies
-* Apply Configuration Policies
 
 ### Endpoint Manager
 * Apply Compliance Baselines
@@ -54,8 +52,12 @@ To add
   * BOYD (Android)
   * BYOD (iOS)
 
+### M365/Azure/SharePoint/Teams
+* Apply 365Inspect Controls
+
+
 ### To Do
-Apply Policy to Pilot Group ID
+Assign policies and templates to group created as part of script.
 
 
 
