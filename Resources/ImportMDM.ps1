@@ -338,7 +338,7 @@ $Resource = "deviceManagement/deviceCompliancePolicies"
       break
     }
 }
-<#
+
 # Upload Compliance Policies from folder
 $CompliancePolicyPath = "..\CompliancePolicies"
 Get-ChildItem $CompliancePolicyPath | Foreach-Object {
@@ -375,7 +375,7 @@ Get-ChildItem $MAMPath | Foreach-Object {
   Add-MDMApplication -JSON $JSON_Output
   Write-host "'$_' uploaded." -ForegroundColor Cyan
 }
-#>
+
 # Upload ManagedAppPolicy
 $AppProtectionPath = "..\ManagedApplicationPolicies"
 Get-ChildItem $AppProtectionPath | Foreach-Object {

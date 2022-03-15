@@ -23,8 +23,12 @@ Setup will check for dependencies at runtime. If any are missing, they will be i
 
 ## :rocket: Usage
 ```
-To add
+.\homebase.ps1
 ```
+You may need to run additional scripts/manually upload to apply baselines. As it stands currently, you will need to perform the current actions:
+* Manually create Android MDM Application Protections (iOS works fine and uploads automatically on script execution)
+* Use `Resources\ImportSecurityPolicies.ps1` to upload the 3 files located in `EndpointSecurityPolicies`.
+
 
 ## :compass: Roadmap
 
@@ -40,25 +44,21 @@ To add
   * :white_check_mark: Android
   * :white_check_mark: iOS
 * Apply Configuration Policies
-* Apply MAM Policies
+* Apply MDM/MAM Policies
   * :white_check_mark: iOS
   * :white_check_mark: Android
 * Apply Application Protection Policies
-  * iOS
-  * Android
-* Apply MDM
-  * Corporate (Android)
-  * Corporate (iOS)
-  * BOYD (Android)
-  * BYOD (iOS)
+  * :white_check_mark: iOS
+  * :white_check_mark: Android
+
 
 ### M365/Azure/SharePoint/Teams
 * Apply 365Inspect Controls
 
 
 ### To Do
-Assign policies and templates to group created as part of script.
-
+* Assign policies and templates to group created as part of script.
+* Upload Endpoint Security Policies from folder.
 
 
 ## Disclaimer
