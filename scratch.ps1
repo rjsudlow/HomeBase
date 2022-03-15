@@ -333,4 +333,6 @@ Function ManagedAppPolicy() {
 Auth
 #MDMApplication
 #DeviceCompliancePolicy
-ManagedAppPolicy
+#ManagedAppPolicy
+
+# NOTE: Need to add in Conditional Access policies from proper import folder.
