@@ -32,14 +32,15 @@ Setup will check for dependencies at runtime. If any are missing, they will be i
 You may need to run additional scripts/manually upload to apply baselines. As it stands currently, you will need to perform the current actions:
 * Manually create Android MDM Application Protections (iOS works fine and uploads automatically on script execution)
 * Use `Resources\ImportSecurityPolicies.ps1` to upload the 3 files located in `EndpointSecurityPolicies`.
+* Use PS 7.x to run `Resources\Add-ConditionalAccessPolicy.ps1` (MS-Graph and PowerShell 5.x error with `@params` variable)
 
 
 ## :compass: Roadmap/Current Hardening Steps
 
 ### AzureAD
-* :white_check_mark: Create Pilot User (AzureAD)
-* :white_check_mark: Create Pilot Group (AzureAD)
-* :white_check_mark: Apply Conditional Access (AzureAD)
+* :white_check_mark: Create Pilot User
+* :white_check_mark: Create Pilot Group
+* :white_check_mark: Apply Conditional Access
 
 ### Endpoint Manager
 * :white_check_mark: Apply Compliance Baselines
