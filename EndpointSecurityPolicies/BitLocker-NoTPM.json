@@ -1,5 +1,5 @@
 {
-    "displayName":  "BitLocker Configuration",
+    "displayName":  "BitLocker-NoTPM",
     "description":  "",
     "roleScopeTagIds":  [
                             "0"

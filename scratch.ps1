@@ -327,6 +327,133 @@ Function ManagedAppPolicy() {
 	}
 }
 
+Function Get-EndpointSecurityTemplate() {
+  # Function gets available Endpoint Security Templates from Microsoft.
+  $graphApiVersion = "Beta"
+  $ESP_resource = "deviceManagement/templates?`$filter=(isof(%27microsoft.graph.securityBaselineTemplate%27))"
+  try {
+    $uri = "https://graph.microsoft.com/$graphApiVersion/$($ESP_resource)"
+    (Invoke-RestMethod -Method Get -Uri $uri -Headers $authToken).value
+  }
+
+  catch {
+    $ex = $_.Exception
+    $errorResponse = $ex.Response.GetResponseStream()
+    $reader = New-Object System.IO.StreamReader($errorResponse)
+    $reader.BaseStream.Position = 0
+    $reader.DiscardBufferedData()
+    $responseBody = $reader.ReadToEnd();
+    Write-Host "Response content:`n$responseBody" -f Red
+    Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
+    write-host
+    break
+  }
+}
+
+Function Add-EndpointSecurityPolicy() {
+  [cmdletbinding()]
+  param
+  ($TemplateId, $JSON)
+  $graphApiVersion = "Beta"
+  $ESP_resource = "deviceManagement/templates/$TemplateId/createInstance"
+  Write-Verbose "Resource: $ESP_resource"
+  try {
+    if($JSON -eq "" -or $JSON -eq $null) {
+      write-host "No JSON specified, please specify valid JSON for the Endpoint Security Policy..." -f Red
+    }
+
+    else {
+      Test-JSON -JSON $JSON
+      $uri = "https://graph.microsoft.com/$graphApiVersion/$($ESP_resource)"
+      Invoke-RestMethod -Uri $uri -Headers $authToken -Method Post -Body $JSON -ContentType "application/json"
+    }
+  }
+
+  catch {
+    $ex = $_.Exception
+    $errorResponse = $ex.Response.GetResponseStream()
+    $reader = New-Object System.IO.StreamReader($errorResponse)
+    $reader.BaseStream.Position = 0
+    $reader.DiscardBufferedData()
+    $responseBody = $reader.ReadToEnd();
+    Write-Host "Response content:`n$responseBody" -f Red
+    Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
+    write-host
+    break
+  }
+}
+
+Function EndpointSecurityPolicy() {
+  $EndpointSecurityPath = (Get-Item .).FullName + ".\EndpointSecurityPolicies"
+  Get-ChildItem $EndpointSecurityPath | Foreach-Object {
+    $JSON_Data = Get-Content "$EndpointSecurityPath\$_"
+    $JSON_Convert = $JSON_Data | ConvertFrom-Json
+    $JSON_DN = $JSON_Convert.displayName
+    $JSON_TemplateDisplayName = $JSON_Convert.TemplateDisplayName
+    $JSON_TemplateId = $JSON_Convert.templateId
+    Write-Host "[*] Endpoint Security Policy '$JSON_DN' found..." -f Yellow
+    # Get all Endpoint Security Templates
+    $Templates = Get-EndpointSecurityTemplate
+    # Checking if templateId from JSON is a valid templateId
+    $ES_Template = $Templates | ?  { $_.id -eq $JSON_TemplateId }
+    # If template is a baseline Edge, MDATP or Windows, use templateId specified
+    if(($ES_Template.templateType -eq "microsoftEdgeSecurityBaseline") -or ($ES_Template.templateType -eq "securityBaseline") -or ($ES_Template.templateType -eq "advancedThreatProtectionSecurityBaseline")) {
+      $TemplateId = $JSON_Convert.templateId
+    }
+
+    # If not a baseline, check if template is deprecated
+    elseif($ES_Template) {
+      # if template isn't deprecated use templateId
+      if($ES_Template.isDeprecated -eq $false) {
+        $TemplateId = $JSON_Convert.templateId
+      }
+
+      # If template deprecated, look for lastest version
+      elseif($ES_Template.isDeprecated -eq $true) {
+        $Template = $Templates | ? { $_.displayName -eq "$JSON_TemplateDisplayName" }
+        $Template = $Template | ? { $_.isDeprecated -eq $false }
+        $TemplateId = $Template.id
+      }
+    }
+
+    # Else If Imported JSON template ID can't be found check if Template Display Name can be used
+    elseif($ES_Template -eq $null) {
+      Write-Host "[!] Didn't find Template for file: $JSON_TemplateId." -f Red
+      Write-Host "[*] Checking if template type '$JSON_TemplateDisplayName' can be used..." -f Yellow
+      $ES_Template = $Templates | ?  { $_.displayName -eq "$JSON_TemplateDisplayName" }
+      if($ES_Template) {
+        if(($ES_Template.templateType -eq "securityBaseline") -or ($ES_Template.templateType -eq "advancedThreatProtectionSecurityBaseline")) {
+          Write-Host "[!] TemplateID '$JSON_TemplateId' with template Name '$JSON_TemplateDisplayName' doesn't exist." -f Red
+          Write-Host "[!] Importing using the updated template could fail as settings specified may not be included in the latest template..." -f Red
+          Write-Host
+          break
+        }
+
+        else {
+          Write-Host "[+] Template '$JSON_TemplateDisplayName' found..." -f Green
+          $Template = $ES_Template | ? { $_.isDeprecated -eq $false }
+          $TemplateId = $Template.id
+        }
+      }
+
+      else {
+        Write-Host "[!] TemplateID '$JSON_TemplateId' with template Name '$JSON_TemplateDisplayName' doesn't exist..." -f Red
+        Write-Host "[!] Import using the updated template could fail (Setting changes could have occurred between template releases)." -f Red
+        break
+      }
+    }
+
+  # Excluding certain properties from JSON that aren't required for import
+  $JSON_Convert = $JSON_Convert | Select-Object -Property * -ExcludeProperty TemplateDisplayName,TemplateId,versionInfo
+  $DisplayName = $JSON_Convert.displayName
+  $JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
+  $JSON_Output
+  Write-Host "[*] Adding Endpoint Security Policy '$DisplayName'" -f Yellow
+  Add-EndpointSecurityPolicy -TemplateId $TemplateId -JSON $JSON_Output
+  Write-Host "[+] '$DisplayName' uploaded." -f Green
+  }
+}
+
 #################################
 ##     Execution Functions     ##
 #################################
@@ -334,5 +461,7 @@ Auth
 #MDMApplication
 #DeviceCompliancePolicy
 #ManagedAppPolicy
+EndpointSecurityPolicy
+
 
 # NOTE: Need to add in Conditional Access policies from proper import folder.
