@@ -506,12 +506,12 @@ Write-Host "[+] Welcome to HomeBase! Automated hardening program for all things 
 Write-Host
 Write-Host "[*] Connecting to services..." -f Yellow
 
-#Auth
-#MDMApplication
-# DeviceCompliancePolicy
-# ManagedAppPolicy
-# EndpointSecurityPolicy
-# Hardening
+Auth
+MDMApplication
+DeviceCompliancePolicy
+ManagedAppPolicy
+EndpointSecurityPolicy
+Hardening
 Write-Host "[*] Use Resources\Add-ConditinalAccessPolicy.ps1 to deploy " -f Yellow
 Write-Host
 Write-Host "[~] Script complete. Godspeed, friendo." -f Cyan
