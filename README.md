@@ -15,7 +15,7 @@ For better customisation, the script has been designed to read JSON files based 
 
 `Example: For different MDM Applications to provide MAM policies for, upload the JSON file to the Android or iOS folder and it will be applied when running the script.`
 
-Special thanks to Soteria for the great 365-Inspect tool to help identify best practice improvements in all things 365.
+Special thanks to Soteria for the great [O365-Inspect](https://github.com/soteria-security/365Inspect) tool to help identify best practice improvements in all things 365.
 
 
 ## :arrow_down: Download
@@ -25,7 +25,10 @@ git clone https://github.com/rjsudlow/homebase
 
 
 ## :computer: Setup
-Runs without issue with PowerShell 5.x. Setup will check for dependencies at runtime - if any are missing, they will be installed.
+Runs without issue with PowerShell 5.x. Current requirements:
+* AzureAD `Install-Module -Name AzureAD`
+* MSOnline `Install-Module MSOnline`
+* MSTeams `Install-Module MicrosoftTeams`
 
 
 ## :rocket: Usage
