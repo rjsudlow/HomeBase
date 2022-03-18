@@ -14,7 +14,7 @@ Billing Administrator                     b0f54661-2d74-4c50-afa3-1ec803f12efe
 Cloud App Security Administrator          892c5842-a9a6-463a-8041-72aa08ca3cf6
 Conditional Access Administrator          b1be1c3e-b65d-4f19-8427-f6fa0d97feb9
 Exchange Administrator                    29232cdf-9323-42fd-ade2-1d097af3e4de
-Global Administrator                       62e90394-69f5-4237-9190-012177145e10
+Global Administrator                      62e90394-69f5-4237-9190-012177145e10
 Helpdesk Administrator                    729827e3-9c14-49f7-bb1b-9608f156bbb8
 Password Administrator                    966707d0-3269-4727-9be2-8c3a10f19b9d
 Privileged Authentication Administrator   7be44c8a-adaf-4e2a-84d6-ab2649e08a13
