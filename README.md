@@ -17,13 +17,16 @@ For better customisation, the script has been designed to read JSON files based 
 
 Special thanks to Soteria for the great 365-Inspect tool to help identify best practice improvements in all things 365.
 
+
 ## :arrow_down: Download
 ```
 git clone https://github.com/rjsudlow/homebase
 ```
 
+
 ## :computer: Setup
-Setup will check for dependencies at runtime. If any are missing, they will be installed.
+Runs without issue with PowerShell 5.x. Setup will check for dependencies at runtime - if any are missing, they will be installed.
+
 
 ## :rocket: Usage
 ```
@@ -57,6 +60,8 @@ You may need to run additional scripts/manually upload to apply baselines. As it
   * iOS
   * Android
 
+## :camera: Images
+![Screenshot](./misc/built-with-powershell.png)
 
 ### M365/Azure/SharePoint/Teams
 * Apply 365Inspect Controls
@@ -66,6 +71,7 @@ You may need to run additional scripts/manually upload to apply baselines. As it
 * Assign policies and templates to group created as part of script.
 * Upload Endpoint Security Policies from folder.
 * Apply EOP Policies
+* PowerShell 7.x support.
 
 
 ## Disclaimer
@@ -73,4 +79,4 @@ You may need to run additional scripts/manually upload to apply baselines. As it
 for nefarious deeds. Please pay special attention to all local, state, and federal laws. Remember:
 "With great power comes great responsibility."
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License - see the [LICENSE](LICENSE) file for details.
