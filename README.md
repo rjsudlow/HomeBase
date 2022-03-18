@@ -61,7 +61,7 @@ You may need to run additional scripts/manually upload to apply baselines. As it
   * Android
 
 ## :camera: Images
-![Screenshot](./misc/built-with-powershell.png)
+![Screenshot](./misc/homebase-screenshot.png)
 
 ### M365/Azure/SharePoint/Teams
 * Apply 365Inspect Controls
