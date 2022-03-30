@@ -4,6 +4,7 @@ Connect-MgGraph -Scopes "User.ReadWrite.All","Group.ReadWrite.All,Application.Re
 Write-Host "[+] Successfully connected with Microsoft Graph. `n" -f Green
 
 $GroupID = "2a0f919e-2ccc-4900-96ee-cbd1453ef1d0" # Change this to Intune Test Group
+$BGA = ""                                         # Change this to the Break Glass Admin account
 
 # Require MFA for all Adminsitrators
 $params = @{
@@ -78,7 +79,7 @@ $params = @{
         "All"
       )
       ExcludeUsers = @(
-        "a0810d24-aced-4d99-a75a-42fa2a2d8bff" # Change this to breakglass account
+        "$BGA"
       )
     }
     Locations = @{
@@ -120,7 +121,7 @@ $params = @{
         "All"
       )
       ExcludeUsers = @(
-        "a0810d24-aced-4d99-a75a-42fa2a2d8bff" # Change this to breakglass account
+        "$BGA"
       )
     }
     Platforms = @{
@@ -168,7 +169,7 @@ $params = @{
         "All"
       )
       ExcludeUsers = @(
-        "a0810d24-aced-4d99-a75a-42fa2a2d8bff" # Change this to breakglass account
+        "$BGA"
       )
     }
     Platforms = @{
