@@ -134,7 +134,6 @@ $params = @{
         "All"
       )
     ExcludeLocations = @(
-      "AllTrusted"
     )
     }
   }
